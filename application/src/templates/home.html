@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Image Extractor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #f9f9f9;
+            cursor: pointer;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .note {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        #progressBar {
+            width: 100%;
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            margin-top: 15px;
+            position: relative;
+        }
+
+        #progressBar > div {
+            height: 100%;
+            width: 0;
+            background: #007bff;
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+
+        #progressText {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .flash-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .success { background-color: #4caf50; }
+        .warning { background-color: #ff9800; }
+        .error { background-color: #f44336; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+
+
+        <div>
+            {% with messages = get_flashed_messages(with_categories=True) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+
+        <h1>PDF Image Extractor</h1>
+        <form action="{{url_for('home.home_page')}}" method="POST" enctype="multipart/form-data" id="uploadForm">
+            <div class="form-group">
+                <label for="pdfFile">Upload seu arquivo PDF:</label>
+                <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" required>
+            </div>
+            <button type="submit">Baixar todas as imagens</button>
+        </form>
+        
+        <p class="note">Somente arquivos PDF são suportados.</p>
+        <p class="note">Alguns PDFs podem demorar um pouco...</p>
+       
+        <div id="progressBar">
+            <div id="progress"></div>
+        </div>
+        <div id="progressText"></div>
+    </div>
+
+    <script>
+        async function uploadFile(event) {
+            const formData = new FormData(event.target);
+            const response = await fetch('/', {
+                method: 'POST',
+                body: formData,
+                onDownloadProgress: (event) => {
+                    if (event.lengthComputable) {
+                        const progress = Math.round((event.loaded / event.total) * 100);
+                        document.getElementById('progress').style.width = `${progress}%`;
+                        document.getElementById('progressText').innerText = `Processing... ${progress}%`;
+                    }
+                }
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'images_from_pdf.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                alert('Erro ao fazer upload do arquivo');
+            }
+        }
+
+        document.getElementById('pdfFile').addEventListener('change', uploadFile);
+    </script>
+</body>
+</html>
